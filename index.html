@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROAD - Reporte de Observación Astronómica</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0e14; color: #e0e0e0; display: flex; justify-content: center; padding: 20px; }
+        .form-container { background-color: #1c222d; padding: 30px; border-radius: 12px; width: 100%; max-width: 550px; border-top: 6px solid #3498db; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h2 { color: #3498db; margin-top: 0; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+        .section { background-color: #262e3b; padding: 20px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #34495e; }
+        .section-title { color: #f1c40f; font-size: 0.85em; font-weight: bold; margin-bottom: 15px; display: block; border-bottom: 1px solid #34495e; padding-bottom: 5px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9em; color: #bdc3c7; }
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #34495e; background-color: #0b0e14; color: white; box-sizing: border-box; }
+        input:focus { border-color: #3498db; outline: none; }
+        .row { display: flex; gap: 15px; }
+        .btn-gps { background-color: #27ae60; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 15px; transition: 0.3s; }
+        .btn-gps:hover { background-color: #2ecc71; }
+        button[type="submit"] { width: 100%; padding: 15px; background-color: #3498db; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        button[type="submit"]:hover { background-color: #2980b9; }
+        .help-text { font-size: 0.75em; color: #7f8c8d; margin-top: -10px; margin-bottom: 10px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Reporte Astronómico</h2>
+    <form id="obsForm">
+
+        <div class="section">
+            <span class="section-title">¿CUÁNDO OBSERVÓ?</span>
+            <div class="row">
+                <div style="flex:1">
+                    <label for="fecha">Fecha</label>
+                    <input type="date" id="fecha" name="fecha" required>
+                </div>
+                <div style="flex:1">
+                    <label for="hora">Hora Local</label>
+                    <input type="time" id="hora" name="hora" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <span class="section-title">¿QUÉ OBSERVÓ?</span>
+            <label for="constelacion">Constelación</label>
+            <select id="constelacion" name="constelacion" required>
+                <option value="">Seleccionar...</option>
+                <option value="Orion">Orion</option>
+                <option value="Crux">Crux (Southern Cross)</option>
+                <option value="Centaurus">Centaurus</option>
+                <option value="Carina">Carina</option>
+            </select>
+
+            <label for="magnitud">Magnitud Límite: <span id="magValue" style="color:#f1c40f;">3.0</span></label>
+            <input type="range" id="magnitud" name="magnitud" min="1" max="7" step="0.1" value="3"
+                   oninput="document.getElementById('magValue').innerHTML = parseFloat(this.value).toFixed(1)">
+            <span class="help-text">1 = Contaminación alta, 7 = Cielo muy oscuro</span>
+
+            <label for="nubes">Condiciones (Nubes)</label>
+            <select id="nubes" name="nubes">
+                <option value="clear">Despejado</option>
+                <option value="partly">Parcialmente nublado</option>
+                <option value="mostly">Mayormente nublado</option>
+                <option value="overcast">Cubierto</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <span class="section-title">¿DÓNDE OBSERVÓ?</span>
+            <label for="pais">País</label>
+            <input type="text" id="pais" name="pais" placeholder="Ej. Argentina" required>
+
+            <button type="button" class="btn-gps" onclick="getGPS()">
+                📍 Obtener ubicación actual (GPS)
+            </button>
+
+            <div class="row">
+                <div style="flex:1">
+                    <label for="latitud">Latitud</label>
+                    <input type="number" id="latitud" name="latitud" step="0.000001" placeholder="-32.8894" required>
+                </div>
+                <div style="flex:1">
+                    <label for="longitud">Longitud</label>
+                    <input type="number" id="longitud" name="longitud" step="0.000001" placeholder="-68.8458" required>
+                </div>
+            </div>
+        </div>
+
+        <label for="comentarioss">Comentarios</label>
+        <textarea id="comentarioss" name="comentarios" rows="3" placeholder="Detalles adicionales..."></textarea>
+
+        <button type="submit" id="submitBtn">ENVIAR REPORTE</button>
+    </form>
+</div>
+
+<script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyJa_uN1hyX17pIpfJpGwtgIVOP1M9MX65UJWI43AUQLt1OnfCowKUnPqDcdViHPh4uhw/exec';
+    const form = document.getElementById('obsForm');
+    const btn = document.getElementById('submitBtn');
+
+    function getGPS() {
+        const gpsBtn = event.target;
+        gpsBtn.innerHTML = "Localizando...";
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.getElementById('latitud').value = pos.coords.latitude.toFixed(6);
+                document.getElementById('longitud').value = pos.coords.longitude.toFixed(6);
+                gpsBtn.innerHTML = "✅ Ubicación obtenida";
+                gpsBtn.style.backgroundColor = "#2ecc71";
+            }, (err) => {
+                alert("Error: Por favor activa el GPS y otorga permisos.");
+                gpsBtn.innerHTML = "📍 Reintentar GPS";
+            });
+        }
+    }
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        btn.disabled = true;
+        btn.innerHTML = "Enviando...";
+
+        const params = new URLSearchParams(new FormData(form)).toString();
+
+        fetch(scriptURL + "?" + params, { mode: 'no-cors' })
+        .then(() => {
+            document.querySelector('.form-container').innerHTML = `
+                <div style="text-align:center; padding: 20px;">
+                    <h2 style="color:#3498db;">¡Éxito!</h2>
+                    <p>Tu reporte ha sido guardado.</p>
+                    <button onclick="location.reload()" style="margin-top:20px; padding:10px; background:#3498db; color:white; border:none; border-radius:6px; cursor:pointer;">Nuevo Reporte</button>
+                </div>`;
+        })
+        .catch(err => {
+            alert("Error al enviar.");
+            btn.disabled = false;
+            btn.innerHTML = "ENVIAR REPORTE";
+        });
+    });
+</script>
+
+</body>
+</html>
