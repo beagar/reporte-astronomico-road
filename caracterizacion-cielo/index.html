@@ -294,50 +294,121 @@
             targetElement.classList.add('border-cyan-400', 'bg-cyan-950/40');
             document.getElementById('selectedMagnitude').value = value;
         }
+//prueba google
+// ==========================================
+// CONFIGURACIÓN DE TU GOOGLE FORM (MODIFICAR AQUÍ)
+// ==========================================
+const FORM_ACTION_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfXXXXXX_TU_ID_AQUÍ/formResponse";
 
+const FORM_ENTRIES = {
+    constelacion: "entry.485132061", // Reemplaza con tus IDs reales de Google Forms
+    fecha:        "entry.1782522827",
+    hora:         "entry.1282177598",
+    coordenadas:  "entry.170777227",
+    comentarios:  "entry.147482579",
+    magnitud:     "entry.76218442",
+    nubes:        "entry.1627574253",
+    email:        "entry.993642505"
+};
+
+// Envío asíncrono de los datos simulando el formulario de Google
+document.getElementById('observationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const magnitude = document.getElementById('selectedMagnitude').value;
+    if (!magnitude) {
+        alert("Por favor, selecciona una carta estelar que coincida con la visibilidad de tu cielo.");
+        return;
+    }
+
+    // Preparar el formato de coordenadas
+    const coordsString = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+
+    // Crear un objeto URLSearchParams para codificar los datos como un formulario estándar (application/x-www-form-urlencoded)
+    const formData = new URLSearchParams();
+    formData.append(FORM_ENTRIES.constelacion, constelacionActiva);
+    formData.append(FORM_ENTRIES.fecha,        document.getElementById('obsDate').value);
+    formData.append(FORM_ENTRIES.hora,         document.getElementById('obsTime').value);
+    formData.append(FORM_ENTRIES.coordenadas,  coordsString);
+    formData.append(FORM_ENTRIES.comentarios,  document.getElementById('locationComments').value);
+    formData.append(FORM_ENTRIES.magnitud,     magnitude);
+    formData.append(FORM_ENTRIES.nubes,        document.getElementById('cloudCover').value);
+    formData.append(FORM_ENTRIES.email,        document.getElementById('userEmail').value);
+
+    // Ejecutar el envío en segundo plano
+    // Usamos el modo 'no-cors' porque Google Forms no devuelve las cabeceras CORS estándar en peticiones AJAX externas,
+    // pero el registro de los datos se procesa de igual forma en sus servidores.
+    fetch(FORM_ACTION_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: formData
+    })
+    .then(() => {
+        // Al usar 'no-cors', la respuesta siempre será opaca, por lo que asumimos éxito si la promesa se resuelve.
+        alert("¡Observación enviada con éxito! Los datos han sido registrados en la base de datos de Google. Gracias por proteger nuestros cielos oscuros.");
+        
+        // Resetear la interfaz
+        document.getElementById('observationForm').reset();
+        document.getElementById('selectedMagnitude').value = "";
+        document.querySelectorAll('.mag-btn').forEach(btn => btn.classList.remove('border-cyan-400', 'bg-cyan-950/40'));
+        cambiarConstelacion('orion'); // Volver al estado por defecto
+    })
+    .catch((err) => {
+        console.error("Error en el envío de datos de ciencia ciudadana:", err);
+        alert("Hubo un inconveniente al procesar el envío. Verifica tu conexión de red.");
+    });
+});
+
+
+     // en prueba google
+
+     
         // Envío asíncrono de los datos recolectados hacia la API
-        document.getElementById('observationForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+ //       document.getElementById('observationForm').addEventListener('submit', async (e) => {
+  //          e.preventDefault();
+//
+ //           const magnitude = document.getElementById('selectedMagnitude').value;//
+ //           if (!magnitude) {
+ //               alert("Por favor, selecciona una carta estelar que coincida con la visibilidad de tu cielo.");
+ //               return;
+ //           }
+//
+ //           const payload = {
+ //               constelacion: constelacionActiva,
+//                date: document.getElementById('obsDate').value,
+//                time: document.getElementById('obsTime').value,
+//                latitude: latitude,
+//                longitude: longitude,
+//                locationComments: document.getElementById('locationComments').value,
+//                magnitudeChart: parseInt(magnitude),
+//                cloudCover: document.getElementById('cloudCover').value,
+//                userEmail: document.getElementById('userEmail').value
+//            };
+//
+//            try {
+//                const response = await fetch('/api/observations', {
+//                    method: 'POST',
+ //                   headers: { 'Content-Type': 'application/json' },
+ //                   body: JSON.stringify(payload)
+ //               });
 
-            const magnitude = document.getElementById('selectedMagnitude').value;
-            if (!magnitude) {
-                alert("Por favor, selecciona una carta estelar que coincida con la visibilidad de tu cielo.");
-                return;
-            }
-
-            const payload = {
-                constelacion: constelacionActiva,
-                date: document.getElementById('obsDate').value,
-                time: document.getElementById('obsTime').value,
-                latitude: latitude,
-                longitude: longitude,
-                locationComments: document.getElementById('locationComments').value,
-                magnitudeChart: parseInt(magnitude),
-                cloudCover: document.getElementById('cloudCover').value,
-                userEmail: document.getElementById('userEmail').value
-            };
-
-            try {
-                const response = await fetch('/api/observations', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    alert("¡Observación enviada con éxito! Gracias por ayudar a proteger nuestros cielos oscuros.");
-                    document.getElementById('observationForm').reset();
-                    document.getElementById('selectedMagnitude').value = "";
-                    document.querySelectorAll('.mag-btn').forEach(btn => btn.classList.remove('border-cyan-400', 'bg-cyan-950/40'));
-                    cambiarConstelacion('orion'); // Resetear a la constelación inicial
-                } else {
-                    alert("Error al enviar los datos. Por favor, inténtalo de nuevo.");
-                }
-            } catch (err) {
-                console.error("Error en la conexión API:", err);
-                alert("Error de red: No se pudo conectar con el servidor de datos.");
-            }
-        });
+ //               if (response.ok) {
+ //                   alert("¡Observación enviada con éxito! Gracias por ayudar a proteger nuestros cielos oscuros.");
+ //                   document.getElementById('observationForm').reset();
+ //                   document.getElementById('selectedMagnitude').value = "";
+ //                   document.querySelectorAll('.mag-btn').forEach(btn => btn.classList.remove('border-cyan-400', 'bg-cyan-950/40'));
+ //                   cambiarConstelacion('orion'); // Resetear a la constelación inicial
+ //               } else {
+ //                   alert("Error al enviar los datos. Por favor, inténtalo de nuevo.");
+ //               }
+ //           } catch (err) {
+ //               console.error("Error en la conexión API:", err);
+ //               alert("Error de red: No se pudo conectar con el servidor de datos.");
+ //           }
+  //      });
     </script>
 </body>
 </html>
