@@ -1,0 +1,343 @@
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyGaze - Mapeo de Contaminación Lumínica</title>
+    <!-- Tailwind CSS para un diseño moderno y responsivo -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { background-color: #0b132b; color: #e2e8f0; }
+        .card { background-color: #1c2541; border: 1px solid #3a506b; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col items-center p-4">
+
+    <header class="w-full max-w-md text-center my-6">
+        <h1 class="text-3xl font-extrabold text-cyan-400 tracking-wide">SKYGAZE</h1>
+        <p class="text-xs text-slate-400 mt-1">Proyecto de Ciencia Ciudadana contra la Contaminación Lumínica</p>
+    </header>
+
+    <main class="w-full max-w-md space-y-6">
+        <form id="observationForm" class="space-y-6">
+
+            <!-- PASO 1: Fecha y Hora -->
+            <section class="card p-5 rounded-2xl shadow-xl">
+                <div class="flex items-center space-x-2 mb-3">
+                    <span class="bg-cyan-500 text-slate-900 font-bold rounded-full h-6 w-6 flex items-center justify-center text-sm">1</span>
+                    <h2 class="text-lg font-semibold text-slate-200">Fecha y Hora</h2>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Fecha de Observación</label>
+                        <input type="date" id="obsDate" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm focus:outline-none focus:border-cyan-500 text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Hora Local</label>
+                        <input type="time" id="obsTime" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm focus:outline-none focus:border-cyan-500 text-slate-200">
+                    </div>
+                </div>
+            </section>
+
+            <!-- PASO 2: Ubicación -->
+            <section class="card p-5 rounded-2xl shadow-xl">
+                <div class="flex items-center space-x-2 mb-3">
+                    <span class="bg-cyan-500 text-slate-900 font-bold rounded-full h-6 w-6 flex items-center justify-center text-sm">2</span>
+                    <h2 class="text-lg font-semibold text-slate-200">Ubicación de Observación</h2>
+                </div>
+                <div class="space-y-3">
+                    <button type="button" id="getLocationBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-900 font-bold py-2 px-4 rounded-lg text-sm transition-colors cursor-pointer">
+                        Obtener Ubicación GPS Actual
+                    </button>
+                    <div class="grid grid-cols-2 gap-3 text-xs text-slate-300">
+                        <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                            Latitud: <span id="latDisplay" class="font-mono text-cyan-400 font-semibold">0.0000</span>
+                        </div>
+                        <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                            Longitud: <span id="lngDisplay" class="font-mono text-cyan-400 font-semibold">0.0000</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Comentarios sobre el lugar (Opcional)</label>
+                        <input type="text" id="locationComments" placeholder="Ej: patio trasero, observación rural" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm focus:outline-none focus:border-cyan-500 text-slate-200">
+                    </div>
+                </div>
+            </section>
+
+            <!-- PASO 3: Selección de Constelación y Cartas de Magnitud -->
+            <section class="card p-5 rounded-2xl shadow-xl">
+                <div class="flex items-center space-x-2 mb-3">
+                    <span class="bg-cyan-500 text-slate-900 font-bold rounded-full h-6 w-6 flex items-center justify-center text-sm">3</span>
+                    <h2 class="text-lg font-semibold text-slate-200">Selección del Cielo</h2>
+                </div>
+                
+                <!-- Selector de Constelación -->
+                <div class="mb-5">
+                    <label class="block text-xs text-slate-400 mb-2">1. Selecciona la constelación que estás mirando:</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" id="btnOrion" onclick="cambiarConstelacion('orion')" class="py-2.5 px-4 rounded-xl border font-bold text-sm transition-all cursor-pointer bg-cyan-950/40 border-cyan-400 text-cyan-400">
+                            Orión
+                        </button>
+                        <button type="button" id="btnSagitario" onclick="cambiarConstelacion('sagitario')" class="py-2.5 px-4 rounded-xl border font-bold text-sm transition-all cursor-pointer bg-slate-900 border border-slate-700 text-slate-400">
+                            Sagitario (La Tetera)
+                        </button>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-400 mb-4">2. Elige la carta estelar que mejor represente las estrellas más tenues que logres ver a simple vista:</p>
+                
+                <div class="grid grid-cols-3 gap-2" id="magnitudeContainer">
+                    <!-- Se inyectan las opciones dinámicamente con JavaScript -->
+                </div>
+                <input type="hidden" id="selectedMagnitude" required value="">
+            </section>
+
+            <!-- PASO 4: Condiciones del Cielo -->
+            <section class="card p-5 rounded-2xl shadow-xl">
+                <div class="flex items-center space-x-2 mb-3">
+                    <span class="bg-cyan-500 text-slate-900 font-bold rounded-full h-6 w-6 flex items-center justify-center text-sm">4</span>
+                    <h2 class="text-lg font-semibold text-slate-200">Condiciones del Cielo</h2>
+                </div>
+                <label class="block text-xs text-slate-400 mb-2">Cantidad de nubes presentes:</label>
+                <select id="cloudCover" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-cyan-500 text-slate-200">
+                    <option value="" disabled selected>Selecciona el estado del cielo...</option>
+                    <option value="clear">Cielo Despejado (Sin nubes)</option>
+                    <option value="quarter">¼ del cielo cubierto</option>
+                    <option value="half">½ del cielo cubierto</option>
+                    <option value="more_than_half">Más de ½ del cielo cubierto</option>
+                </select>
+            </section>
+
+            <!-- PASO 5: Crédito de la Contribución -->
+            <section class="card p-5 rounded-2xl shadow-xl">
+                <div class="flex items-center space-x-2 mb-3">
+                    <span class="bg-cyan-500 text-slate-900 font-bold rounded-full h-6 w-6 flex items-center justify-center text-sm">5</span>
+                    <h2 class="text-lg font-semibold text-slate-200">Identificación</h2>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Correo de SciStarter / Proyecto (Opcional)</label>
+                    <input type="email" id="userEmail" placeholder="tu-correo@ejemplo.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm focus:outline-none focus:border-cyan-500 text-slate-200">
+                </div>
+            </section>
+
+            <!-- Botón de Envío -->
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-md transition-colors shadow-lg cursor-pointer">
+                Enviar Observación del Cielo Nocturno
+            </button>
+        </form>
+    </main>
+
+    <footer class="text-center text-xs text-slate-500 my-8">
+        &copy; 2026 Proyecto SkyGaze. Inspirado en Globe at Night.
+    </footer>
+
+    <!-- Lógica y motor gráfico del Frontend -->
+    <script>
+        let latitude = 0;
+        let longitude = 0;
+        let constelacionActiva = 'orion';
+
+        // Base de datos posicional (X, Y de 0 a 100) y Magnitudes reales
+        const datosEstelares = {
+            orion: [
+                { nombre: "Rigel", x: 65, y: 75, mag: 0.1 },
+                { nombre: "Betelgeuse", x: 35, y: 25, mag: 0.4 },
+                { nombre: "Bellatrix", x: 63, y: 28, mag: 1.6 },
+                { nombre: "Alnilam", x: 50, y: 50, mag: 1.7 },
+                { nombre: "Alnitak", x: 45, y: 51, mag: 1.7 },
+                { nombre: "Saiph", x: 37, y: 72, mag: 2.1 },
+                { nombre: "Mintaka", x: 55, y: 49, mag: 2.2 },
+                { nombre: "Meissa", x: 49, y: 18, mag: 3.4 },
+                { nombre: "Espada 1", x: 48, y: 58, mag: 4.0 },
+                { nombre: "Espada 2", x: 49, y: 61, mag: 4.6 },
+                { nombre: "Fondo 1", x: 20, y: 40, mag: 5.2 },
+                { nombre: "Fondo 2", x: 80, y: 60, mag: 5.7 }
+            ],
+            sagitario: [
+                { nombre: "Kaus Australis", x: 45, y: 75, mag: 1.8 }, 
+                { nombre: "Nunki", x: 70, y: 45, mag: 2.0 },
+                { nombre: "Ascella", x: 68, y: 68, mag: 2.6 },
+                { nombre: "Kaus Media", x: 38, y: 60, mag: 2.7 },
+                { nombre: "Kaus Borealis", x: 50, y: 46, mag: 2.8 },
+                { nombre: "Alnasl", x: 25, y: 56, mag: 3.0 },
+                { nombre: "Phi Sagittarii", x: 56, y: 53, mag: 3.1 },
+                { nombre: "Tau Sagittarii", x: 78, y: 55, mag: 3.3 },
+                { nombre: "Hekate", x: 30, y: 25, mag: 4.5 },
+                { nombre: "Fondo Rural 1", x: 15, y: 70, mag: 5.1 },
+                { nombre: "Fondo Rural 2", x: 85, y: 20, mag: 5.5 },
+                { nombre: "Fondo Prístino", x: 50, y: 85, mag: 5.9 }
+            ]
+        };
+
+        // Auto-completar fecha y hora local actual al iniciar
+        document.addEventListener("DOMContentLoaded", () => {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+
+            document.getElementById('obsDate').value = `${year}-${month}-${day}`;
+            document.getElementById('obsTime').value = `${hours}:${minutes}`;
+            
+            generateMagnitudeCharts();
+        });
+
+        // API de Geolocalización de HTML5
+        document.getElementById('getLocationBtn').addEventListener('click', () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        latitude = position.coords.latitude;
+                        longitude = position.coords.longitude;
+                        document.getElementById('latDisplay').innerText = latitude.toFixed(4);
+                        document.getElementById('lngDisplay').innerText = longitude.toFixed(4);
+                    },
+                    (error) => {
+                        alert("No se pudo obtener la ubicación. Por favor, otorga los permisos de GPS a tu navegador.");
+                    }
+                );
+            } else {
+                alert("La geolocalización no es compatible con este navegador.");
+            }
+        });
+
+        // Alternar la constelación activa y actualizar la vista
+        function cambiarConstelacion(constelacion) {
+            constelacionActiva = constelacion;
+            
+            const btnOrion = document.getElementById('btnOrion');
+            const btnSagi = document.getElementById('btnSagitario');
+            
+            if (constelacion === 'orion') {
+                btnOrion.className = "py-2.5 px-4 rounded-xl border font-bold text-sm transition-all cursor-pointer bg-cyan-950/40 border-cyan-400 text-cyan-400";
+                btnSagi.className = "py-2.5 px-4 rounded-xl border font-bold text-sm transition-all cursor-pointer bg-slate-900 border-slate-700 text-slate-400";
+            } else {
+                btnSagi.className = "py-2.5 px-4 rounded-xl border font-bold text-sm transition-all cursor-pointer bg-cyan-950/40 border-cyan-400 text-cyan-400";
+                btnOrion.className = "py-2.5 px-4 rounded-xl border font-bold text-sm transition-all cursor-pointer bg-slate-900 border-slate-700 text-slate-400";
+            }
+            
+            document.getElementById('selectedMagnitude').value = ""; // Resetear selección
+            generateMagnitudeCharts();
+        }
+
+        // Generar las tarjetas interactivas de Magnitud Límite
+        function generateMagnitudeCharts() {
+            const container = document.getElementById('magnitudeContainer');
+            container.innerHTML = ""; 
+
+            for (let magLimite = 1; magLimite <= 6; magLimite++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'mag-btn bg-slate-950 border border-slate-800 hover:border-cyan-400 p-2 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all';
+                btn.dataset.value = magLimite;
+
+                const canvasId = `canvas-mag-${magLimite}`;
+                btn.innerHTML = `
+                    <span class="text-xs text-slate-400 mb-1">Mág. Límite ${magLimite}</span>
+                    <canvas id="${canvasId}" width="120" height="120" class="bg-[#050b14] rounded-lg border border-slate-900"></canvas>
+                `;
+
+                btn.addEventListener('click', () => selectMagnitude(magLimite, btn));
+                container.appendChild(btn);
+
+                // Dibujar el cielo correspondiente de forma asíncrona inmediata
+                setTimeout(() => {
+                    dibujarMapaCeleste(canvasId, magLimite);
+                }, 0);
+            }
+        }
+
+        // Renderizado del mapa en Canvas según la magnitud límite
+        function dibujarMapaCeleste(canvasId, magLimite) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const listaEstrellas = datosEstelares[constelacionActiva];
+            // Filtrar estrellas: en astronomía menor número de magnitud = más brillo
+            const estrellasVisibles = listaEstrellas.filter(e => e.mag <= magLimite);
+
+            estrellasVisibles.forEach(e => {
+                const pixelX = (e.x / 100) * w;
+                const pixelY = (e.y / 100) * h;
+                
+                // Tamaño físico inverso a la magnitud astronómica
+                const radio = Math.max(0.6, (7 - e.mag) * 0.55);
+
+                ctx.beginPath();
+                ctx.arc(pixelX, pixelY, radio, 0, 2 * Math.PI);
+                
+                ctx.fillStyle = e.mag < 1.0 ? '#e0f2fe' : '#ffffff';
+                if(e.mag < 0.5) {
+                    ctx.shadowBlur = 3;
+                    ctx.shadowColor = '#22d3ee';
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fill();
+            });
+        }
+
+        // Control visual de la tarjeta seleccionada
+        function selectMagnitude(value, targetElement) {
+            document.querySelectorAll('.mag-btn').forEach(btn => {
+                btn.classList.remove('border-cyan-400', 'bg-cyan-950/40');
+                btn.classList.add('border-slate-800');
+            });
+            targetElement.classList.remove('border-slate-800');
+            targetElement.classList.add('border-cyan-400', 'bg-cyan-950/40');
+            document.getElementById('selectedMagnitude').value = value;
+        }
+
+        // Envío asíncrono de los datos recolectados hacia la API
+        document.getElementById('observationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const magnitude = document.getElementById('selectedMagnitude').value;
+            if (!magnitude) {
+                alert("Por favor, selecciona una carta estelar que coincida con la visibilidad de tu cielo.");
+                return;
+            }
+
+            const payload = {
+                constelacion: constelacionActiva,
+                date: document.getElementById('obsDate').value,
+                time: document.getElementById('obsTime').value,
+                latitude: latitude,
+                longitude: longitude,
+                locationComments: document.getElementById('locationComments').value,
+                magnitudeChart: parseInt(magnitude),
+                cloudCover: document.getElementById('cloudCover').value,
+                userEmail: document.getElementById('userEmail').value
+            };
+
+            try {
+                const response = await fetch('/api/observations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert("¡Observación enviada con éxito! Gracias por ayudar a proteger nuestros cielos oscuros.");
+                    document.getElementById('observationForm').reset();
+                    document.getElementById('selectedMagnitude').value = "";
+                    document.querySelectorAll('.mag-btn').forEach(btn => btn.classList.remove('border-cyan-400', 'bg-cyan-950/40'));
+                    cambiarConstelacion('orion'); // Resetear a la constelación inicial
+                } else {
+                    alert("Error al enviar los datos. Por favor, inténtalo de nuevo.");
+                }
+            } catch (err) {
+                console.error("Error en la conexión API:", err);
+                alert("Error de red: No se pudo conectar con el servidor de datos.");
+            }
+        });
+    </script>
+</body>
+</html>
